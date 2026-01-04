@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>부드러운 소통이 시작되는 곳</title>
+    <style>
+        :root { --bg: #ffffff; --card: rgba(0, 0, 0, 0.05); --text: #000000; --border: rgba(0, 0, 0, 0.1); --btn: #000000; --btn-text: #ffffff; }
+        [data-theme='dark'] { --bg: #1c1c1e; --card: rgba(255, 255, 255, 0.1); --text: #ffffff; --border: rgba(255, 255, 255, 0.1); --btn: #ffffff; --btn-text: #000000; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; height: 100%; transition: background 0.3s; }
+        #loader, #captcha-ui, #ban-ui { display: flex; justify-content: center; align-items: center; height: 100vh; position: fixed; width: 100%; z-index: 999; background: var(--bg); flex-direction: column; }
+        #main-ui { display: none; flex-direction: column; align-items: center; padding: 20px; width: 100%; box-sizing: border-box; }
+        .theme-toggle { position: fixed; top: 15px; right: 15px; background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 20px; cursor: pointer; z-index: 1000; font-weight: bold; }
+        .captcha-box { background: var(--card); padding: 25px; border-radius: 24px; border: 1px solid var(--border); text-align: center; width: 320px; box-sizing: border-box; }
+        canvas { background: #e0e0e0; border-radius: 12px; margin: 15px 0; width: 100%; height: 90px; }
+        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; width: 100%; max-width: 500px; }
+        .spec-card { background: var(--card); padding: 18px; border-radius: 20px; border: 1px solid var(--border); font-size: 0.85rem; }
+        .menu-list { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 500px; padding-bottom: 50px; }
+        .menu-item { display: block; background: var(--card); padding: 22px; border-radius: 20px; text-decoration: none; color: var(--text); border: 1px solid var(--border); font-weight: bold; font-size: 1.1rem; text-align: center; }
+        input { width: 100%; box-sizing: border-box; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); text-align: center; margin-bottom: 15px; font-size: 1.2rem; }
+        .main-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--btn); color: var(--btn-text); font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body data-theme="dark">
+    <button class="theme-toggle" onclick="toggleTheme()">Mode Toggle</button>
+    <div id="loader"><div class="captcha-box">시스템 확인 중...</div></div>
+    <div id="ban-ui" style="display: none;"><div class="captcha-box"><h2 style="color: #ff3b30;">접속 최종 차단</h2><p id="timer"></p></div></div>
+    <div id="captcha-ui" style="display: none;">
+        <div class="captcha-box">
+            <div style="font-weight: bold; margin-bottom: 5px;">보안 인증 (남은 횟수: <span id="fail-count">3</span>)</div>
+            <canvas id="cvs"></canvas>
+            <input type="text" id="ans" placeholder="대문자/숫자 입력">
+            <button class="main-btn" onclick="check()">접속 승인</button>
+        </div>
+    </div>
+    <div id="main-ui">
+        <h1 style="margin: 60px 0 40px; font-size: 1.5rem; text-align: center;">부드러운 소통이 시작되는 곳</h1>
+        <div class="specs-grid">
+            <div class="spec-card">📱 <b>Mobile</b><br>Galaxy S25 (Base)<br>One UI 8.5 Beta</div>
+            <div class="spec-card">💻 <b>PC</b><br>MacBook Air<br>macOS Tahoe 26.3</div>
+        </div>
+        <div class="menu-list">
+            <a href="https://www.youtube.com/@oneui7-q3k" class="menu-item">유튜브 바로가기</a>
+            <a href="https://open.kakao.com/o/sa7ptt9h" class="menu-item">카카오톡 오픈채팅방</a>
+            <a href="https://orangefox.download/" class="menu-item">OrangeFox Recovery</a>
+            <a href="https://apps.samsung.com/appquery/appDetail.as?appId=com.samsung.android.goodlock" class="menu-item">삼성 굿락</a>
+            <a href="https://play.google.com/store/apps/details?id=com.primatelabs.geekbench6" class="menu-item">Geekbench 6</a>
+            <a href="https://github.com/PixelExperience" class="menu-item">Pixel Experience Plus</a>
+            <a href="https://apps.samsung.com/appquery/appDetail.as?appId=com.android.samsung.utilityapp" class="menu-item">삼성 굿가디언즈</a>
+        </div>
+    </div>
+    <script>
+        let code = "", fails = 0;
+        function toggleTheme() { document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('theme', document.body.dataset.theme); }
+        function init() {
+            const c = document.getElementById('cvs'), x = c.getContext('2d'), str = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            code = Array.from({length:6}, () => str[Math.floor(Math.random()*str.length)]).join('');
+            c.width = 300; c.height = 100;
+            const tC = document.createElement('canvas'); tC.width = 300; tC.height = 100;
+            const tx = tC.getContext('2d'); tx.fillStyle = "#e0e0e0"; tx.fillRect(0,0,300,100);
+            tx.font = "italic bold 50px Courier"; tx.fillStyle = "#000";
+            code.split('').forEach((v, i) => { tx.save(); tx.translate(35+i*42, 65); tx.rotate((Math.random()-0.5)*0.5); tx.fillText(v, 0, 0); tx.restore(); });
+            x.fillStyle = "#e0e0e0"; x.fillRect(0,0,300,100);
+            for(let y=0; y<100; y++) { let s = Math.sin(y/8) * 12; x.drawImage(tC, 0, y, 300, 1, s, y, 300, 1); }
+            for(let i=0; i<40; i++) { x.strokeStyle = "rgba(0,0,0,0.4)"; x.beginPath(); x.moveTo(Math.random()*300, Math.random()*100); x.lineTo(Math.random()*300, Math.random()*100); x.stroke(); }
+        }
+        function check() {
+            if (document.getElementById('ans').value.toUpperCase() === code) {
+                localStorage.setItem('auth_time', Date.now()); localStorage.removeItem('ban_lv');
+                showMain();
+            } else {
+                fails++; document.getElementById('fail-count').innerText = 3-fails;
+                if(fails>=3) {
+                    let lv = parseInt(localStorage.getItem('ban_lv') || 0) + 1;
+                    localStorage.setItem('ban_lv', lv);
+                    let wait = lv >= 3 ? 86400000 : lv * 600000; // 3단계(9번) 틀리면 24시간
+                    localStorage.setItem('ban_until', Date.now() + wait);
+                    location.reload();
+                } else { init(); document.getElementById('ans').value = ""; }
+            }
+        }
+        function showMain() { document.getElementById('loader').style.display = 'none'; document.getElementById('captcha-ui').style.display = 'none'; document.getElementById('main-ui').style.display = 'flex'; }
+        window.onload = () => {
+            if (localStorage.getItem('theme')) document.body.dataset.theme = localStorage.getItem('theme');
+            const ban = localStorage.getItem('ban_until');
+            if (ban && Date.now() < parseInt(ban)) {
+                document.getElementById('loader').style.display = 'none'; document.getElementById('ban-ui').style.display = 'flex';
+                setInterval(() => {
+                    let r = Math.ceil((parseInt(ban) - Date.now()) / 1000);
+                    let h = Math.floor(r/3600), m = Math.floor((r%3600)/60), s = r%60;
+                    document.getElementById('timer').innerText = `${h}시간 ${m}분 ${s}초 후 시도 가능`;
+                    if(r<=0) location.reload();
+                }, 1000);
+                return;
+            }
+            if (localStorage.getItem('auth_time') && Date.now() - localStorage.getItem('auth_time') < 600000) showMain();
+            else setTimeout(() => { document.getElementById('loader').style.display = 'none'; document.getElementById('captcha-ui').style.display = 'flex'; init(); }, 1500);
+        };
+    </script>
+</body>
+</html>
