@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>부드러운 소통이 시작되는 곳</title>
+    <style>
+        :root { --bg: #ffffff; --card: rgba(0, 0, 0, 0.05); --text: #000000; --border: rgba(0, 0, 0, 0.1); --btn: #000000; --btn-text: #ffffff; }
+        [data-theme='dark'] { --bg: #1c1c1e; --card: rgba(255, 255, 255, 0.1); --text: #ffffff; --border: rgba(255, 255, 255, 0.1); --btn: #ffffff; --btn-text: #000000; }
+        html, body { height: 100%; margin: 0; background-color: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; overflow: hidden; }
+        #captcha-ui { display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; z-index: 999; background: var(--bg); }
+        #main-ui { display: none; flex-direction: column; align-items: center; padding: 40px 20px 150px 20px; width: 100%; box-sizing: border-box; overflow-y: auto; height: 100%; }
+        .captcha-box { background: var(--card); border-radius: 24px; border: 1px solid var(--border); width: 85%; max-width: 320px; overflow: hidden; }
+        /* 캡차 표시 영역: 정답 대신 랜덤 보안문자 표시 */
+        .captcha-display { padding: 30px 20px; background: #e0e0e0; color: #000; font-size: 2.2rem; font-weight: bold; font-style: italic; text-align: center; border-bottom: 1px solid var(--border); letter-spacing: 6px; }
+        .input-section { padding: 25px 20px; }
+        .code-input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); text-align: center; font-size: 1.2rem; margin-bottom: 15px; outline: none; }
+        .main-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--btn); color: var(--btn-text); font-weight: bold; cursor: pointer; }
+        .confetti { position: fixed; z-index: 1001; pointer-events: none; color: #ffffff; font-weight: normal; font-size: 14px; }
+        .menu-item { display: block; background: var(--card); padding: 22px; border-radius: 18px; text-decoration: none; color: var(--text); border: 1px solid var(--border); font-weight: bold; margin-bottom: 12px; text-align: center; width: 100%; max-width: 400px; box-sizing: border-box; }
+    </style>
+</head>
+<body data-theme="dark">
+    <div id="captcha-ui">
+        <div class="captcha-box">
+            <div id="random-txt" class="captcha-display">LOADING</div>
+            <div class="input-section">
+                <input type="text" id="ans" class="code-input" placeholder="인증 코드를 입력해 주세요" autofocus>
+                <button class="main-btn" onclick="check()">인증 승인하기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-ui">
+        <h1 style="margin-bottom: 40px; font-size: 1.4rem; text-align: center;">부드러운 소통이 시작되는 곳</h1>
+        <a href="https://orangefox.download/" class="menu-item">OrangeFox Recovery</a>
+        <a href="https://apps.samsung.com/appquery/appDetail.as?appId=com.samsung.android.goodlock" class="menu-item">삼성 굿락</a>
+        <a href="https://play.google.com/store/apps/details?id=com.primatelabs.geekbench6" class="menu-item">Geekbench 6</a>
+        <a href="https://github.com/PixelExperience" class="menu-item">Pixel Experience Plus</a>
+        <a href="https://apps.samsung.com/appquery/appDetail.as?appId=com.android.samsung.utilityapp" class="menu-item">삼성 굿가디언즈</a>
+    </div>
+
+    <script>
+        // 정답은 코드 내부에만 숨김
+        const masterSecret = "ep129d9"; 
+
+        // 캡차 영역에 보일 랜덤 문자 생성 (정답 노출 방지)
+        function makeRandom() {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            let res = "";
+            for(let i=0; i<6; i++) res += chars[Math.floor(Math.random()*chars.length)];
+            document.getElementById('random-txt').innerText = res;
+        }
+
+        function check() {
+            const val = document.getElementById('ans').value.toLowerCase();
+            // 입력값이 마스터의 비밀 코드와 맞는지 확인
+            if (val === masterSecret) {
+                localStorage.setItem("auth_expire", new Date().getTime() + 600000);
+                startRain();
+                setTimeout(() => {
+                    document.getElementById('captcha-ui').style.display = 'none';
+                    document.getElementById('main-ui').style.display = 'flex';
+                }, 800);
+            } else {
+                alert("코드가 올바르지 않습니다. 다시 확인해 주세요.");
+                document.getElementById('ans').value = "";
+                makeRandom(); // 틀리면 랜덤 문자 바꿈
+            }
+        }
+
+        function startRain() {
+            const words = ["Magisk", "Root", "Kernel", "SU", "Zygisk"];
+            for (let i = 0; i < 30; i++) {
+                const f = document.createElement("div");
+                f.className = "confetti";
+                f.innerText = words[Math.floor(Math.random() * words.length)];
+                f.style.left = Math.random() * 100 + "vw";
+                f.style.top = "-20px";
+                document.body.appendChild(f);
+                f.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(100vh)', opacity: 0 }], { duration: 2000 });
+                setTimeout(() => f.remove(), 2000);
+            }
+        }
+
+        window.onload = () => {
+            const exp = localStorage.getItem("auth_expire");
+            if (exp && new Date().getTime() < exp) {
+                document.getElementById('captcha-ui').style.display = 'none';
+                document.getElementById('main-ui').style.display = 'flex';
+            } else {
+                makeRandom();
+            }
+        };
+    </script>
+</body>
+</html>
