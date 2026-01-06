@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>부드러운 소통이 시작되는 곳</title>
+    <style>
+        :root { --bg: #ffffff; --card: rgba(0, 0, 0, 0.05); --text: #000000; --border: rgba(0, 0, 0, 0.1); --btn: #000000; --btn-text: #ffffff; }
+        [data-theme='dark'] { --bg: #1c1c1e; --card: rgba(255, 255, 255, 0.1); --text: #ffffff; --border: rgba(255, 255, 255, 0.1); --btn: #ffffff; --btn-text: #000000; }
+        
+        /* 하단 잘림 방지 및 배경 유지 */
+        html { height: 100%; background-color: var(--bg); }
+        body { margin: 0; padding: 0; background-color: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; min-height: 100%; transition: background 0.3s; overflow-x: hidden; }
+        
+        #loader, #captcha-ui { display: flex; justify-content: center; align-items: center; height: 100vh; position: fixed; top: 0; left: 0; width: 100%; z-index: 999; background: var(--bg); flex-direction: column; }
+        
+        /* 메인 UI 하단 패딩 넉넉히 줌 */
+        #main-ui { display: none; flex-direction: column; align-items: center; padding: 20px 20px 150px 20px; width: 100%; box-sizing: border-box; background-color: var(--bg); }
+        
+        .theme-toggle { position: fixed; top: 15px; right: 15px; background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 20px; cursor: pointer; z-index: 1000; font-weight: bold; }
+        .captcha-box { background: var(--card); padding: 25px; border-radius: 24px; border: 1px solid var(--border); text-align: center; width: 320px; box-sizing: border-box; }
+        
+        canvas { background: #e0e0e0; border-radius: 12px; margin: 15px 0; width: 100%; height: 90px; }
+        
+        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; width: 100%; max-width: 500px; }
+        .spec-card { background: var(--card); padding: 18px; border-radius: 20px; border: 1px solid var(--border); font-size: 0.85rem; }
+        
+        .menu-list { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 500px; }
+        .menu-item { display: block; background: var(--card); padding: 22px; border-radius: 20px; text-decoration: none; color: var(--text); border: 1px solid var(--border); font-weight: bold; font-size: 1.1rem; text-align: center; }
+        
+        input { width: 100%; box-sizing: border-box; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); text-align: center; margin-bottom: 15px; font-size: 1.2rem; }
+        .main-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--btn); color: var(--btn-text); font-weight: bold; cursor: pointer; }
+
+        /* 흰색 단어비 스타일 */
+        .confetti { position: fixed; z-index: 1001; pointer-events: none; color: #ffffff; font-weight: normal; font-size: 14px; }
+    </style>
+</head>
+<body data-theme="dark">
+    <button class="theme-toggle" onclick="toggleTheme()">Mode Toggle</button>
+    
+    <div id="loader"><div class="captcha-box">시스템 확인 중...</div></div>
+    
+    <div id="captcha-ui" style="display: none;">
+        <div class="captcha-box">
+            <div style="font-weight: bold; margin-bottom: 5px;">인증해 주세요</div>
+            <canvas id="cvs"></canvas>
+            <input type="text" id="ans" placeholder="위 글자를 입력하세요">
+            <button class="main-btn" onclick="check()">접속 승인하기</button>
+        </div>
+    </div>
+
+    <div id="main-ui">
+        <h1 style="margin: 60px 0 40px; font-size: 1.5rem; text-align: center;">부드러운 소통이 시작되는 곳</h1>
+        <div class="specs-grid">
+            <div class="spec-card">📱 <b>Mobile</b><br>Galaxy S25 (Base)</div>
+            <div class="spec-card">💻 <b>PC</b><br>MacBook Air</div>
+        </div>
+        <div class="menu-list">
+            <a href="https://orangefox.download/" class="menu-item">OrangeFox Recovery</a>
+            <a href="https://apps.samsung.com/appquery/appDetail.as?appId=com.samsung.android.goodlock" class="menu-item">삼성 굿락</a>
+            <a href="https://play.google.com/store/apps/details?id=com.primatelabs.geekbench6" class="menu-item">Geekbench 6</a>
+            <a href="https://github.com/PixelExperience" class="menu-item">Pixel Experience Plus</a>
+            <a href="https://apps.samsung.com/appquery/appDetail.as?appId=com.android.samsung.utilityapp" class="menu-item">삼성 굿가디언즈</a>
+        </div>
+    </div>
+
+    <script>
+        let code = "";
+        const target = "ep129d9"; // 마스터가 정한 코드
+
+        function toggleTheme() { document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'; }
+
+        function init() {
+            const c = document.getElementById('cvs'), x = c.getContext('2d');
+            code = target;
+            c.width = 300; c.height = 100;
+            x.fillStyle = "#e0e0e0"; x.fillRect(0,0,300,100);
+            x.font = "bold 45px Arial"; x.fillStyle = "#000";
+            x.textAlign = "center";
+            x.fillText(code, 150, 65);
+            // 깔끔한 선만 긋기
+            for(let i=0; i<3; i++) { x.strokeStyle = "#888"; x.beginPath(); x.moveTo(Math.random()*300, Math.random()*100); x.lineTo(Math.random()*300, Math.random()*100); x.stroke(); }
+        }
+
+        function check() {
+            const input = document.getElementById('ans').value.toLowerCase();
+            if (input === target) { 
+                startRain();
+                setTimeout(showMain, 800); 
+            } else {
+                alert("코드가 일치하지 않습니다.");
+                document.getElementById('ans').value = "";
+            }
+        }
+
+        function showMain() {
+            document.getElementById('captcha-ui').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'flex';
+        }
+
+        // 흰색 단어비 기능
+        function startRain() {
+            const words = ["Magisk", "Root", "Kernel", "SU", "Zygisk"];
+            for (let i = 0; i < 30; i++) {
+                const f = document.createElement("div");
+                f.className = "confetti";
+                f.innerText = words[Math.floor(Math.random() * words.length)];
+                f.style.left = Math.random() * 100 + "vw";
+                f.style.top = "-20px";
+                document.body.appendChild(f);
+                f.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(100vh)', opacity: 0 }], { duration: 2000 });
+                setTimeout(() => f.remove(), 2000);
+            }
+        }
+
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('captcha-ui').style.display = 'flex';
+                init();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
