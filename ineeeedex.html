@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>부드러운 소통이 시작되는 곳</title>
+    <style>
+        :root { --bg: #ffffff; --card: rgba(0, 0, 0, 0.05); --text: #000000; --border: rgba(0, 0, 0, 0.1); --btn: #000000; --btn-text: #ffffff; }
+        [data-theme='dark'] { --bg: #1c1c1e; --card: rgba(255, 255, 255, 0.1); --text: #ffffff; --border: rgba(255, 255, 255, 0.1); --btn: #ffffff; --btn-text: #000000; }
+        html { height: 100%; background-color: var(--bg); }
+        body { margin: 0; padding: 0; background-color: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; min-height: 100%; overflow-x: hidden; }
+        
+        #captcha-ui { display: flex; justify-content: center; align-items: center; height: 100vh; position: fixed; top: 0; left: 0; width: 100%; z-index: 999; background: var(--bg); flex-direction: column; }
+        #main-ui { display: none; flex-direction: column; align-items: center; padding: 20px 20px 150px 20px; width: 100%; box-sizing: border-box; background-color: var(--bg); }
+        
+        .captcha-box { background: var(--card); padding: 30px; border-radius: 24px; border: 1px solid var(--border); text-align: center; width: 340px; }
+        
+        /* 로봇 인증 체크박스 스타일 */
+        .robot-check { display: flex; align-items: center; justify-content: flex-start; background: #f9f9f9; border: 1px solid #d3d3d3; padding: 15px; border-radius: 4px; margin-bottom: 20px; color: #000; }
+        .robot-check input { width: 24px; height: 24px; margin-right: 12px; cursor: pointer; }
+        
+        /* 노이즈 없는 깔끔한 입력창 */
+        .code-input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); text-align: center; margin-bottom: 15px; font-size: 1.2rem; font-weight: bold; }
+        .main-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--btn); color: var(--btn-text); font-weight: bold; cursor: pointer; }
+        
+        .menu-item { display: block; background: var(--card); padding: 22px; border-radius: 20px; text-decoration: none; color: var(--text); border: 1px solid var(--border); font-weight: bold; margin-bottom: 12px; text-align: center; }
+        .confetti { position: fixed; z-index: 1001; pointer-events: none; color: #00ff00; font-weight: bold; }
+    </style>
+</head>
+<body data-theme="dark">
+    <div id="captcha-ui">
+        <div class="captcha-box">
+            <h2 style="font-size: 1.2rem; margin-bottom: 20px;">보안 인증</h2>
+            
+            <div class="robot-check">
+                <input type="checkbox" id="robot-bit">
+                <span>로봇이 아닙니다</span>
+            </div>
+
+            <input type="text" id="ans" class="code-input" placeholder="인증 코드 입력">
+            <button class="main-btn" onclick="check()">접속 승인</button>
+            <p id="fail-msg" style="color: #ff4d4d; font-size: 0.8rem; display: none; margin-top: 10px;">다시 확인해 (남은 횟수: <span id="fail-count">3</span>)</p>
+        </div>
+    </div>
+
+    <div id="main-ui">
+        <h1 style="margin: 60px 0 40px; font-size: 1.5rem; text-align: center;">부드러운 소통이 시작되는 곳</h1>
+        <div style="width: 100%; max-width: 500px;">
+            <a href="https://www.youtube.com/@oneui7-q3k" class="menu-item">유튜브 바로가기</a>
+            <a href="https://open.kakao.com/o/sa7ptt9h" class="menu-item">카카오톡 오픈채팅방</a>
+            <a href="https://orangefox.download/" class="menu-item">OrangeFox Recovery</a>
+            <a href="https://apps.samsung.com/appquery/appDetail.as?appId=com.samsung.android.goodlock" class="menu-item">삼성 굿락</a>
+            <a href="https://play.google.com/store/apps/details?id=com.primatelabs.geekbench6" class="menu-item">Geekbench 6</a>
+            <a href="https://github.com/PixelExperience" class="menu-item">Pixel Experience Plus</a>
+            <a href="https://apps.samsung.com/appquery/appDetail.as?appId=com.android.samsung.utilityapp" class="menu-item">삼성 굿가디언즈</a>
+            <a href="https://www.sammobile.com/" class="menu-item">SamMobile News</a>
+            <a href="https://forum.xda-developers.com/" class="menu-item">XDA Developers</a>
+            <a href="https://developer.android.com/" class="menu-item">Android Developer</a>
+        </div>
+    </div>
+
+    <script>
+        const targetCode = "ep129d9";
+        let fails = 0;
+
+        function check() {
+            const isRobotChecked = document.getElementById('robot-bit').checked;
+            const val = document.getElementById('ans').value.toLowerCase();
+
+            if (!isRobotChecked) {
+                alert("로봇 체크를 해주세요.");
+                return;
+            }
+
+            if (val === targetCode) {
+                const expire = new Date().getTime() + (10 * 60 * 1000);
+                localStorage.setItem("auth_expire", expire);
+                startRain();
+                setTimeout(() => {
+                    document.getElementById('captcha-ui').style.display = 'none';
+                    document.getElementById('main-ui').style.display = 'flex';
+                }, 800);
+            } else {
+                fails++;
+                document.getElementById('fail-msg').style.display = 'block';
+                document.getElementById('fail-count').innerText = 3 - fails;
+                if(fails >= 3) { alert("접근 차단"); location.reload(); }
+                document.getElementById('ans').value = "";
+            }
+        }
+
+        function startRain() {
+            const words = ["Magisk", "Root", "Kernel", "SU", "Zygisk"];
+            for (let i = 0; i < 30; i++) {
+                const f = document.createElement("div");
+                f.className = "confetti";
+                f.innerText = words[Math.floor(Math.random() * words.length)];
+                f.style.left = Math.random() * 100 + "vw";
+                f.style.top = "-50px";
+                document.body.appendChild(f);
+                f.animate([{ transform: `translateY(0)` }, { transform: `translateY(100vh)`, opacity: 0 }], { duration: 2000 });
+                setTimeout(() => f.remove(), 2000);
+            }
+        }
+
+        window.onload = () => {
+            const expire = localStorage.getItem("auth_expire");
+            if (expire && new Date().getTime() < expire) {
+                document.getElementById('captcha-ui').style.display = 'none';
+                document.getElementById('main-ui').style.display = 'flex';
+            }
+        };
+    </script>
+</body>
+</html>
